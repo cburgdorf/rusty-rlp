@@ -15,6 +15,7 @@ version = "0.11.1"
 features = ["extension-module"]
 
 [dependencies]
+ethereum-types = "0.7.0"
 rlp = "0.4.5"
 primitive-types = "0.7.2"
 hex-literal = "0.3.0"
