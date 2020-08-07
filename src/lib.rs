@@ -46,8 +46,6 @@ fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
 }
 
 
-//call with rusty_rlp.decode_fictive_type(b"\xf8M\x05\x89\x01\x0e\xfb\xefg\x94\x1fy\xb2\xa0V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x01b/\xb5\xe3c\xb4!\xa0\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p")
-// TODO: Return actual Python bytes: https://users.rust-lang.org/t/pyo3-best-way-to-return-bytes-from-function-call/46577/2
 #[pyfunction]
 fn decode_fictive_type(rlp_bytes: Vec<u8>) -> PyResult<(u64, u64, u64, u64)> {
   let rlp = rlp::Rlp::new(&rlp_bytes);
@@ -59,6 +57,7 @@ fn decode_fictive_type(rlp_bytes: Vec<u8>) -> PyResult<(u64, u64, u64, u64)> {
     rlp.val_at::<u64>(3).unwrap()
   ))
 }
+
 
 #[pyfunction]
 fn encode_fictive_type(fictive_type: (u64, u64, u64, u64)) -> PyResult<Vec<u8>> {
