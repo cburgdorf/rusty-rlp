@@ -1,5 +1,4 @@
 import pytest
-import rlp
 from rlp import decode
 from rlp.codec import encode_raw
 from target.release import rusty_rlp
