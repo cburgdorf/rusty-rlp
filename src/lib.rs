@@ -14,31 +14,19 @@ struct UpstreamRLP<'a> {
 fn to_py(r: rlp::Rlp, py: pyo3::Python) -> PyObject {
   unsafe {
     match r.prototype() {
+        // FIXME: Get rid of the panics
         Ok(Prototype::Null) => panic!("null"),
         Ok(Prototype::Data(_)) => PyBytes::new(py, r.data().unwrap()).to_object(py),
-        Ok(Prototype::List(len)) => {
+        Ok(Prototype::List(_)) => {
             // TODO: Investigate, are we supposed to use PyList from pyo3::types instead?
             let current = pyo3::ffi::PyList_New(0);
-            // FIXME: This is aweful. Why doesn't it work it the iterator?
-            for i in 0..len {
-              match r.at(1).unwrap().prototype() {
-                Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, PyBytes::new(py, r.at(i).unwrap().data().unwrap()).to_object(py).into_ptr()),
-                Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(r.at(i).unwrap(), py).into_ptr()),
-                _ => panic!("meh")
-              };
-
+            for item in r.iter() {
+                match item.prototype() {
+                  Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, PyBytes::new(py, item.data().unwrap()).to_object(py).into_ptr()),
+                  Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(item, py).into_ptr()),
+                    _ => panic!("meh")
+                };
             }
-
-            // for item in r.iter() {
-            //     match item.prototype() {
-            //       Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, format!("from{:x?}to", r.as_raw()).to_object(py).into_ptr()),
-
-            //       //Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, format!("from{:x?}to", r.data().unwrap()).to_object(py).into_ptr()),
-
-            //         Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(item, py).into_ptr()),
-            //         _ => panic!("meh")
-            //     };
-            // }
             pyo3::PyObject::from_owned_ptr_or_panic(py, current)
         }
         _ => panic!("woot"),
