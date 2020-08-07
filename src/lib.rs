@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 
-use pyo3::types::PyBytes;
+use pyo3::types::{PyBytes, PyList};
 
 use rlp::Prototype;
 
@@ -12,25 +12,23 @@ struct UpstreamRLP<'a> {
 
 
 fn to_py(r: rlp::Rlp, py: pyo3::Python) -> PyObject {
-  unsafe {
-    match r.prototype() {
-        // FIXME: Get rid of the panics
-        Ok(Prototype::Null) => panic!("null"),
-        Ok(Prototype::Data(_)) => PyBytes::new(py, r.data().unwrap()).to_object(py),
-        Ok(Prototype::List(_)) => {
-            // TODO: Investigate, are we supposed to use PyList from pyo3::types instead?
-            let current = pyo3::ffi::PyList_New(0);
-            for item in r.iter() {
-                match item.prototype() {
-                  Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, PyBytes::new(py, item.data().unwrap()).to_object(py).into_ptr()),
-                  Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(item, py).into_ptr()),
-                    _ => panic!("meh")
-                };
-            }
-            pyo3::PyObject::from_owned_ptr_or_panic(py, current)
-        }
-        _ => panic!("woot"),
-    }
+  match r.prototype() {
+      // FIXME: Get rid of the panics
+      // Fixme: Get rid of all the unwraps
+      Ok(Prototype::Null) => panic!("null"),
+      Ok(Prototype::Data(_)) => PyBytes::new(py, r.data().unwrap()).to_object(py),
+      Ok(Prototype::List(_)) => {
+          let current = PyList::empty(py);
+          for item in r.iter() {
+              match item.prototype() {
+                Ok(Prototype::Data(_)) => current.append(PyBytes::new(py, item.data().unwrap()).to_object(py)).unwrap(),
+                Ok(Prototype::List(_)) => current.append(to_py(item, py)).unwrap(),
+                  _ => panic!("meh")
+              };
+          }
+          current.to_object(py)
+      }
+      _ => panic!("woot"),
   }
 }
 
