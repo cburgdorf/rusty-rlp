@@ -30,8 +30,14 @@ $ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_r
 
 These numbers ☝️ suggest that `rusty_rlp` runs more than 4x faster compared to pyrlp.
 
+### How to run the Python tests
+
+`python -m pytest python_tests.py `
+
+Or ` cargo build --release && cp target/release/librusty_rlp.so target/release/rusty_rlp.so && python -m pytest python_tests.py` to compile and test in one step.
+
 ### Caveats
 
-The API isn't yet fully aligned. E.g. we aren't returning actual Python `bytes` types yet.
-We return a vector of bytes instead but this can be fixed. I don't expect it to have much impact (if any) on the performance though.
+The code is in very bad shape and we aren't yet passing all the tests. Also `encode_raw` isn't
+yet implemented.
 

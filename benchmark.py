@@ -23,6 +23,7 @@ def get_decoded_samples(sample_count: int) -> Sequence[Tuple[int, int, int, int]
             random.randint(0, UPPER_BOUND)
         )
 
+
 def check_correctness():
     for sample in get_decoded_samples(100):
         pyrlp_bytes = encode(sample)
@@ -31,20 +32,18 @@ def check_correctness():
         assert bytes(rustyrlp_bytes) == pyrlp_bytes
 
         pyrlp_decoded = decode(pyrlp_bytes)
-        rustyrlp_decoded = rusty_rlp.decode_fictive_type(rustyrlp_bytes)
+        rustyrlp_decoded = rusty_rlp.decode_raw(pyrlp_bytes)
 
-        # FIXME: Same here, we adjust for the difference in return values
-        for index, _ in enumerate(pyrlp_decoded):
-            assert int.from_bytes(pyrlp_decoded[index], 'big') == rustyrlp_decoded[index]
-
+        assert pyrlp_decoded == rustyrlp_decoded
 
 
 def bench_pyrlp_roundtrip():
     for sample in get_decoded_samples(100):
         rlp_bytes = encode(sample)
         decoded = decode(rlp_bytes)
-        
+
+
 def bench_rustyrlp_roundtrip():
     for sample in get_decoded_samples(100):
         rlp_bytes = rusty_rlp.encode_fictive_type(sample)
-        decoded = rusty_rlp.decode_fictive_type(rlp_bytes)
+        decoded = rusty_rlp.decode_raw(rlp_bytes)

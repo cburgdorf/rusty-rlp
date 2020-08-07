@@ -1,21 +1,64 @@
-use bytes::{Bytes, BytesMut};
-
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 
-use hex_literal::hex;
+use pyo3::types::PyBytes;
 
-#[pyfunction]
-fn do_foo() -> PyResult<String> {
-  let data = hex!("f84d0589010efbef67941f79b2a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
-  let rlp = rlp::Rlp::new(&data);
-  Ok(format!("{}", rlp))
+use rlp::Prototype;
+
+
+struct UpstreamRLP<'a> {
+  _rlp: rlp::Rlp<'a>,
+}
+
+
+fn to_py(r: rlp::Rlp, py: pyo3::Python) -> PyObject {
+  unsafe {
+    match r.prototype() {
+        Ok(Prototype::Null) => panic!("null"),
+        Ok(Prototype::Data(_)) => PyBytes::new(py, r.data().unwrap()).to_object(py),
+        Ok(Prototype::List(len)) => {
+            // TODO: Investigate, are we supposed to use PyList from pyo3::types instead?
+            let current = pyo3::ffi::PyList_New(0);
+            // FIXME: This is aweful. Why doesn't it work it the iterator?
+            for i in 0..len {
+              match r.at(1).unwrap().prototype() {
+                Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, PyBytes::new(py, r.at(i).unwrap().data().unwrap()).to_object(py).into_ptr()),
+                Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(r.at(i).unwrap(), py).into_ptr()),
+                _ => panic!("meh")
+              };
+
+            }
+
+            // for item in r.iter() {
+            //     match item.prototype() {
+            //       Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, format!("from{:x?}to", r.as_raw()).to_object(py).into_ptr()),
+
+            //       //Ok(Prototype::Data(_)) => pyo3::ffi::PyList_Append(current, format!("from{:x?}to", r.data().unwrap()).to_object(py).into_ptr()),
+
+            //         Ok(Prototype::List(_)) => pyo3::ffi::PyList_Append(current, to_py(item, py).into_ptr()),
+            //         _ => panic!("meh")
+            //     };
+            // }
+            pyo3::PyObject::from_owned_ptr_or_panic(py, current)
+        }
+        _ => panic!("woot"),
+    }
+  }
+}
+
+// TODO: We currently do not use this because I couldn't figure out the lifetime error that
+// we get in decode_raw if we rely on auto-conversion. Probably fixable, so leaving it in as a reminder.
+impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
+  fn into_py(self, py: pyo3::Python) -> PyObject {
+    to_py(self._rlp, py)
+  }
 }
 
 #[pyfunction]
-fn debug_me(rlp_bytes: Vec<u8>) -> PyResult<String> {
-  Ok(format!("{:?}", rlp_bytes))
+fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
+  Ok(to_py(rlp::Rlp::new(&rlp_bytes), py))
 }
+
 
 //call with rusty_rlp.decode_fictive_type(b"\xf8M\x05\x89\x01\x0e\xfb\xefg\x94\x1fy\xb2\xa0V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x01b/\xb5\xe3c\xb4!\xa0\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p")
 // TODO: Return actual Python bytes: https://users.rust-lang.org/t/pyo3-best-way-to-return-bytes-from-function-call/46577/2
@@ -46,20 +89,12 @@ fn encode_fictive_type(fictive_type: (u64, u64, u64, u64)) -> PyResult<Vec<u8>> 
   Ok(stream.out())
 }
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
-
 /// A Python module implemented in Rust.
 #[pymodule]
-fn rusty_rlp(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(sum_as_string))?;
-    m.add_wrapped(wrap_pyfunction!(do_foo))?;
-    m.add_wrapped(wrap_pyfunction!(decode_fictive_type))?;
-    m.add_wrapped(wrap_pyfunction!(encode_fictive_type))?;
-    m.add_wrapped(wrap_pyfunction!(debug_me))?;
+fn rusty_rlp(_py: Python, module: &PyModule) -> PyResult<()> {
+    module.add_wrapped(wrap_pyfunction!(decode_fictive_type))?;
+    module.add_wrapped(wrap_pyfunction!(encode_fictive_type))?;
+    module.add_wrapped(wrap_pyfunction!(decode_raw))?;
 
     Ok(())
 }
