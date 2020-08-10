@@ -42,19 +42,26 @@ impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
 
 
 fn enc<'a>(stream: &'a mut rlp::RlpStream, val: &PyAny, py: pyo3::Python) -> &'a mut rlp::RlpStream {
-  if py.is_instance::<PyList, _>(val).unwrap() {
-    let current_list: &PyList = val.downcast().unwrap();
-    stream.begin_unbounded_list();
-    for item in current_list {
-      enc(stream, item, py);
-    }
-    stream.finalize_unbounded_list();
-    stream
-  } else {
-    let item_bytes: &PyBytes = val.downcast().unwrap();
-    stream.append(&item_bytes.as_bytes());
-    stream
+
+  match val.get_type().name().as_ref() {
+    // TODO: support Tuple or really any sequence
+    "list" => {
+      let current_list: &PyList = val.downcast().unwrap();
+      stream.begin_unbounded_list();
+      for item in current_list {
+        enc(stream, item, py);
+      }
+      stream.finalize_unbounded_list();
+      stream
+    },
+    "bytes" => {
+      let item_bytes: &PyBytes = val.downcast().unwrap();
+      stream.append(&item_bytes.as_bytes());
+      stream
+    },
+    _ => panic!("Failed to encode object")
   }
+
 }
 
 #[pyfunction]
