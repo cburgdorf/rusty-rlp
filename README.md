@@ -20,18 +20,47 @@ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_rou
 
 ### Results
 
-```
-$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_roundtrip()'
-300 loops, best of 5: 0.698 msec per loop
+#### Encoding Performance
 
+```
+$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_encoding()'
+300 loops, best of 5: 0.0267 msec per loop
+
+$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_encoding()'
+300 loops, best of 5: 0.00374 msec per loop
+
+```
+
+These numbers ☝️ suggest that `rusty_rlp` encodes roughly 7.5 faster compared to pyrlp.
+
+
+### Decoding Performance
+
+```
+$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_decoding()'
+300 loops, best of 5: 0.0241 msec per loop
+
+$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_decoding()'
+300 loops, best of 5: 0.011 msec per loop
+
+```
+
+These numbers ☝️ suggest that `rusty_rlp` decodes roughly 2.2 faster compared to pyrlp.
+
+### Roundtrip Performance
+
+```
 $ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_roundtrip()'
-300 loops, best of 5: 3.07 msec per loop
+300 loops, best of 5: 2.08 msec per loop
+
+$ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_roundtrip()'
+300 loops, best of 5: 1.09 msec per loop
+
 ```
 
-These numbers ☝️ suggest that `rusty_rlp` runs more than 4x faster compared to pyrlp.
+These numbers ☝️ suggest that the rountrip performance of `rusty_rlp` is about 2x faster than pyrlp.
+(Not exactly sure why it isn't higher given the results for encoding/decoding in isolation).
 
-**UPDATE: The current numbers only suggest a 2x performance, because the benchmark was altered to
-work on raw bytes and the code now handles some additional conversions".
 
 ### How to run the Python tests
 
