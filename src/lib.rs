@@ -3,7 +3,7 @@ use pyo3::wrap_pyfunction;
 
 use pyo3::types::{PyBytes, PyList};
 
-use rlp::Prototype;
+use rlp::{DecoderError, Prototype};
 
 
 struct UpstreamRLP<'a> {
@@ -11,24 +11,23 @@ struct UpstreamRLP<'a> {
 }
 
 
-fn to_py(r: rlp::Rlp, py: pyo3::Python) -> PyObject {
+fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, DecoderError> {
   match r.prototype() {
-      // FIXME: Get rid of the panics
-      // Fixme: Get rid of all the unwraps
-      Ok(Prototype::Null) => panic!("null"),
-      Ok(Prototype::Data(_)) => PyBytes::new(py, r.data().unwrap()).to_object(py),
+      Ok(Prototype::Null) => Err(DecoderError::Custom("Invariant")),
+      Ok(Prototype::Data(_)) => Ok(PyBytes::new(py, r.data().unwrap()).to_object(py)),
       Ok(Prototype::List(_)) => {
           let current = PyList::empty(py);
           for item in r.iter() {
               match item.prototype() {
                 Ok(Prototype::Data(_)) => current.append(PyBytes::new(py, item.data().unwrap()).to_object(py)).unwrap(),
-                Ok(Prototype::List(_)) => current.append(to_py(item, py)).unwrap(),
-                  _ => panic!("meh")
+                Ok(Prototype::List(_)) => current.append(to_py(item, py).unwrap()).unwrap(),
+                Err(e) => return Err(e),
+                _ => return Err(DecoderError::Custom("Invariant")),
               };
           }
-          current.to_object(py)
+          Ok(current.to_object(py))
       }
-      _ => panic!("woot"),
+      Err(e) => Err(e),
   }
 }
 
@@ -36,7 +35,7 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> PyObject {
 // we get in decode_raw if we rely on auto-conversion. Probably fixable, so leaving it in as a reminder.
 impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
   fn into_py(self, py: pyo3::Python) -> PyObject {
-    to_py(self._rlp, py)
+    to_py(self._rlp, py).unwrap()
   }
 }
 
@@ -75,7 +74,7 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 
 #[pyfunction]
 fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
-  Ok(to_py(rlp::Rlp::new(&rlp_bytes), py))
+  Ok(to_py(rlp::Rlp::new(&rlp_bytes), py).unwrap())
 }
 
 
