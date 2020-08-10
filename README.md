@@ -30,6 +30,9 @@ $ python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_r
 
 These numbers ☝️ suggest that `rusty_rlp` runs more than 4x faster compared to pyrlp.
 
+**UPDATE: The current numbers only suggest a 2x performance, because the benchmark was altered to
+work on raw bytes and the code now handles some additional conversions".
+
 ### How to run the Python tests
 
 `python -m pytest python_tests.py `

@@ -6,30 +6,27 @@ import rlp
 from eth_utils import encode_hex, decode_hex
 from rlp import encode, decode
 from rlp.sedes import raw, big_endian_int
+from rlp.codec import encode_raw
 
 from target.release import rusty_rlp
 
-UPPER_BOUND = 18_446_744_073_709_551_615
 
-SAMPLE = (1, 2, 3, 4)
-
-
-def get_decoded_samples(sample_count: int) -> Sequence[Tuple[int, int, int, int]]:
+def get_decoded_samples(sample_count: int) -> Sequence[Tuple[bytes, bytes, bytes, bytes]]:
     for _ in range(sample_count):
-        yield (
-            random.randint(0, UPPER_BOUND),
-            random.randint(0, UPPER_BOUND),
-            random.randint(0, UPPER_BOUND),
-            random.randint(0, UPPER_BOUND)
-        )
+        yield [
+            bytes([random.getrandbits(8) for _ in range(0, 8)]),
+            bytes([random.getrandbits(8) for _ in range(0, 32)]),
+            bytes([random.getrandbits(8) for _ in range(0, 1)]),
+            bytes([random.getrandbits(8) for _ in range(0, 16)]),
+        ]
 
 
 def check_correctness():
     for sample in get_decoded_samples(100):
-        pyrlp_bytes = encode(sample)
-        rustyrlp_bytes = rusty_rlp.encode_fictive_type(sample)
-        # FIXME: The return types aren't yet fully aligned. We can make rusty_rlp to return Python bytes
-        assert bytes(rustyrlp_bytes) == pyrlp_bytes
+        pyrlp_bytes = encode_raw(sample)
+        rustyrlp_bytes = rusty_rlp.encode_raw(sample)
+
+        assert pyrlp_bytes == rustyrlp_bytes
 
         pyrlp_decoded = decode(pyrlp_bytes)
         rustyrlp_decoded = rusty_rlp.decode_raw(pyrlp_bytes)
@@ -39,11 +36,13 @@ def check_correctness():
 
 def bench_pyrlp_roundtrip():
     for sample in get_decoded_samples(100):
-        rlp_bytes = encode(sample)
+        rlp_bytes = encode_raw(sample)
         decoded = decode(rlp_bytes)
+        assert decoded == sample
 
 
 def bench_rustyrlp_roundtrip():
     for sample in get_decoded_samples(100):
-        rlp_bytes = rusty_rlp.encode_fictive_type(sample)
+        rlp_bytes = rusty_rlp.encode_raw(sample)
         decoded = rusty_rlp.decode_raw(rlp_bytes)
+        assert decoded == sample
