@@ -40,6 +40,32 @@ impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
   }
 }
 
+
+fn enc<'a>(stream: &'a mut rlp::RlpStream, val: &PyAny, py: pyo3::Python) -> &'a mut rlp::RlpStream {
+  if py.is_instance::<PyList, _>(val).unwrap() {
+    let current_list: &PyList = val.downcast().unwrap();
+    stream.begin_unbounded_list();
+    for item in current_list {
+      enc(stream, item, py);
+    }
+    stream.finalize_unbounded_list();
+    stream
+  } else {
+    let item_bytes: &PyBytes = val.downcast().unwrap();
+    stream.append(&item_bytes.as_bytes());
+    stream
+  }
+}
+
+#[pyfunction]
+fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
+  let mut r = rlp::RlpStream::new();
+  enc(&mut r, &val.cast_as(py).unwrap(), py);
+
+  Ok(PyBytes::new(py, &r.out()).to_object(py))
+
+}
+
 #[pyfunction]
 fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
   Ok(to_py(rlp::Rlp::new(&rlp_bytes), py))
@@ -80,6 +106,7 @@ fn rusty_rlp(_py: Python, module: &PyModule) -> PyResult<()> {
     module.add_wrapped(wrap_pyfunction!(decode_fictive_type))?;
     module.add_wrapped(wrap_pyfunction!(encode_fictive_type))?;
     module.add_wrapped(wrap_pyfunction!(decode_raw))?;
+    module.add_wrapped(wrap_pyfunction!(encode_raw))?;
 
     Ok(())
 }

@@ -20,7 +20,11 @@ from target.release import rusty_rlp
 )
 def test_decode_raw(input):
     pyrlp_encoded = encode_raw(input)
+    rustyrlp_encoded = rusty_rlp.encode_raw(input)
+
+    assert pyrlp_encoded == rustyrlp_encoded
+
     pyrlp_decoded = decode(pyrlp_encoded)
-    rustyrlp_decoded = rusty_rlp.decode_raw(pyrlp_encoded)
+    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded)
 
     assert pyrlp_decoded == rustyrlp_decoded == input
