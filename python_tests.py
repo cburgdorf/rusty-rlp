@@ -28,3 +28,19 @@ def test_decode_raw(input):
     rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded)
 
     assert pyrlp_decoded == rustyrlp_decoded == input
+
+
+@pytest.mark.parametrize(
+    'rlp_data',
+    (
+        0,
+        32,
+        ['asdf', ['fdsa', [5]]],
+        str
+    ),
+)
+def test_invalid_serializations(rlp_data):
+    # Unfortunately `rusty_rlp.EncodingError` can not be imported:
+    # https://github.com/PyO3/pyo3/pull/805
+    with pytest.raises(Exception, match='Can not encode value'):
+        rusty_rlp.encode_raw(rlp_data)

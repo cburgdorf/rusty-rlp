@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
-
+use pyo3::{create_exception, wrap_pyfunction};
+use pyo3::exceptions::Exception;
 use pyo3::types::{PyBytes, PyList};
 
 use rlp::{DecoderError, Prototype};
 
+create_exception!(rusty_rlp, EncodingError, Exception);
 
 struct UpstreamRLP<'a> {
   _rlp: rlp::Rlp<'a>,
@@ -40,31 +41,31 @@ impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
 }
 
 
-fn enc<'a>(stream: &'a mut rlp::RlpStream, val: &PyAny, py: pyo3::Python) -> &'a mut rlp::RlpStream {
+fn enc<'a>(stream: &'a mut rlp::RlpStream, val: &PyAny, py: pyo3::Python) -> Result<&'a mut rlp::RlpStream, pyo3::PyErr> {
 
   // TODO: Support any sequence or iterable here
   if let Ok(list_item) = val.downcast::<PyList>() {
       stream.begin_unbounded_list();
       for item in list_item {
-        enc(stream, item, py);
+        enc(stream, item, py)?;
       }
       stream.finalize_unbounded_list();
-      stream
+      Ok(stream)
   } else if let Ok(bytes_item) = val.downcast::<PyBytes>() {
     stream.append(&bytes_item.as_bytes());
-    stream
+    Ok(stream)
   } else {
-    panic!("Failed to encode object")
+    return Err(EncodingError::py_err(format!("Can not encode value {:?}", val)))
   }
 }
 
 #[pyfunction]
 fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
   let mut r = rlp::RlpStream::new();
-  enc(&mut r, &val.cast_as(py).unwrap(), py);
-
-  Ok(PyBytes::new(py, &r.out()).to_object(py))
-
+  match enc(&mut r, &val.cast_as(py).unwrap(), py) {
+    Ok(_) => Ok(PyBytes::new(py, &r.out()).to_object(py)),
+    Err(e) => Err(e)
+  }
 }
 
 #[pyfunction]
