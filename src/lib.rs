@@ -6,11 +6,12 @@ use pyo3::types::{PyBytes, PyList};
 use rlp::{DecoderError, Prototype};
 
 create_exception!(rusty_rlp, EncodingError, Exception);
+create_exception!(rusty_rlp, DecodingError, Exception);
 
 
-fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, DecoderError> {
+fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
   match r.prototype() {
-      Ok(Prototype::Null) => Err(DecoderError::Custom("Invariant")),
+      Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
       Ok(Prototype::Data(_)) => Ok(PyBytes::new(py, r.data().unwrap()).to_object(py)),
       Ok(Prototype::List(_)) => {
           let current = PyList::empty(py);
@@ -18,13 +19,13 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, DecoderError> {
               match item.prototype() {
                 Ok(Prototype::Data(_)) => current.append(PyBytes::new(py, item.data().unwrap()).to_object(py)).unwrap(),
                 Ok(Prototype::List(_)) => current.append(to_py(item, py).unwrap()).unwrap(),
-                Err(e) => return Err(e),
-                _ => return Err(DecoderError::Custom("Invariant")),
+                Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
+                _ => return Err(DecodingError::py_err("Invariant")),
               };
           }
           Ok(current.to_object(py))
       }
-      Err(e) => Err(e),
+      Err(e) => Err(DecodingError::py_err(format!("{:?}", e))),
   }
 }
 
@@ -58,7 +59,7 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 
 #[pyfunction]
 fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
-  Ok(to_py(rlp::Rlp::new(&rlp_bytes), py).unwrap())
+  to_py(rlp::Rlp::new(&rlp_bytes), py)
 }
 
 

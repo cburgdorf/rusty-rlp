@@ -44,3 +44,17 @@ def test_invalid_serializations(rlp_data):
     # https://github.com/PyO3/pyo3/pull/805
     with pytest.raises(Exception, match='Can not encode value'):
         rusty_rlp.encode_raw(rlp_data)
+
+
+@pytest.mark.parametrize(
+    'rlp_data',
+    (
+        None,
+        'asdf',
+    ),
+)
+def test_invalid_deserializations(rlp_data):
+    # FIXME: For some reason, this gives us TypeError, when we would rather like to see
+    # a rusty_rlp.DecodingError ¯\_(ツ)_/¯
+    with pytest.raises(Exception):
+        rusty_rlp.decode_raw(rlp_data)
