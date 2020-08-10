@@ -7,10 +7,6 @@ use rlp::{DecoderError, Prototype};
 
 create_exception!(rusty_rlp, EncodingError, Exception);
 
-struct UpstreamRLP<'a> {
-  _rlp: rlp::Rlp<'a>,
-}
-
 
 fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, DecoderError> {
   match r.prototype() {
@@ -29,14 +25,6 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, DecoderError> {
           Ok(current.to_object(py))
       }
       Err(e) => Err(e),
-  }
-}
-
-// TODO: We currently do not use this because I couldn't figure out the lifetime error that
-// we get in decode_raw if we rely on auto-conversion. Probably fixable, so leaving it in as a reminder.
-impl pyo3::IntoPy<PyObject> for UpstreamRLP<'_>{
-  fn into_py(self, py: pyo3::Python) -> PyObject {
-    to_py(self._rlp, py).unwrap()
   }
 }
 
