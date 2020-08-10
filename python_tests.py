@@ -40,9 +40,7 @@ def test_decode_raw(input):
     ),
 )
 def test_invalid_serializations(rlp_data):
-    # Unfortunately `rusty_rlp.EncodingError` can not be imported:
-    # https://github.com/PyO3/pyo3/pull/805
-    with pytest.raises(Exception, match='Can not encode value'):
+    with pytest.raises(rusty_rlp.EncodingError, match='Can not encode value'):
         rusty_rlp.encode_raw(rlp_data)
 
 
@@ -55,6 +53,6 @@ def test_invalid_serializations(rlp_data):
 )
 def test_invalid_deserializations(rlp_data):
     # FIXME: For some reason, this gives us TypeError, when we would rather like to see
-    # a rusty_rlp.DecodingError ¯\_(ツ)_/¯
-    with pytest.raises(Exception):
+    # a rusty_rlp.DecodingError ¯\_(ツ)_/¯. But if we ever fix it, this will start failing.
+    with pytest.raises(TypeError):
         rusty_rlp.decode_raw(rlp_data)

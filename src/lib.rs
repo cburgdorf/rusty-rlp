@@ -98,6 +98,8 @@ fn rusty_rlp(_py: Python, module: &PyModule) -> PyResult<()> {
     module.add_wrapped(wrap_pyfunction!(encode_fictive_type))?;
     module.add_wrapped(wrap_pyfunction!(decode_raw))?;
     module.add_wrapped(wrap_pyfunction!(encode_raw))?;
+    module.add("DecodingError", _py.get_type::<DecodingError>())?;
+    module.add("EncodingError", _py.get_type::<EncodingError>())?;
 
     Ok(())
 }
