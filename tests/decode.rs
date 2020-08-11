@@ -12,7 +12,7 @@ use rstest::rstest;
     )
 )]
 fn decode_strings(input: Vec<u8>, expected: &str) {
-    let out:String = rlp::decode(&input).unwrap();
+    let out: String = rlp::decode(&input).unwrap();
     assert_eq!(&out, expected);
 }
 
@@ -48,21 +48,43 @@ fn decode_block_header() {
     let mix_digest: Vec<u8> = rlp.val_at(13).unwrap();
     let nonce: Vec<u8> = rlp.val_at(14).unwrap();
 
-    assert_eq!(hex::encode(parent_hash), "1e77d8f1267348b516ebc4f4da1e2aa59f85f0cbd853949500ffac8bfc38ba14");
-    assert_eq!(hex::encode(uncle_hash), "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347");
-    assert_eq!(hex::encode(coinbase), "2a65aca4d5fc5b5c859090a6c34d164135398226");
-    assert_eq!(hex::encode(state_root), "0b5e4386680f43c224c5c037efc0b645c8e1c3f6b30da0eec07272b4e6f8cd89");
-    assert_eq!(hex::encode(tx_root), "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
-    assert_eq!(hex::encode(receipt_root), "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
+    assert_eq!(
+        hex::encode(parent_hash),
+        "1e77d8f1267348b516ebc4f4da1e2aa59f85f0cbd853949500ffac8bfc38ba14"
+    );
+    assert_eq!(
+        hex::encode(uncle_hash),
+        "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
+    );
+    assert_eq!(
+        hex::encode(coinbase),
+        "2a65aca4d5fc5b5c859090a6c34d164135398226"
+    );
+    assert_eq!(
+        hex::encode(state_root),
+        "0b5e4386680f43c224c5c037efc0b645c8e1c3f6b30da0eec07272b4e6f8cd89"
+    );
+    assert_eq!(
+        hex::encode(tx_root),
+        "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+    );
+    assert_eq!(
+        hex::encode(receipt_root),
+        "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+    );
     assert_eq!(hex::encode(bloom), "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(hex::encode(difficulty), "057a418a7c3e");
     assert_eq!(hex::encode(block_number), "061a80");
     assert_eq!(hex::encode(gas_limit), "2fefd8");
     assert_eq!(hex::encode(gas_used), "");
     assert_eq!(hex::encode(block_time), "5622efdc");
-    assert_eq!(hex::encode(extra), "d583010202844765746885676f312e35856c696e7578");
-    assert_eq!(hex::encode(mix_digest), "3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38");
+    assert_eq!(
+        hex::encode(extra),
+        "d583010202844765746885676f312e35856c696e7578"
+    );
+    assert_eq!(
+        hex::encode(mix_digest),
+        "3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38"
+    );
     assert_eq!(hex::encode(nonce), "6af23caae95692ef");
-
 }
-

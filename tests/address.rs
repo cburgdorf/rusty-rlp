@@ -1,7 +1,7 @@
+use ethereum_types::H160;
 use hex_literal::hex;
 use rlp;
 use rstest::rstest;
-use ethereum_types::{H160};
 
 // This is encoded as a string. Wouldn't an address be formatted as a pure binary instead?
 // https://github.com/paritytech/parity-common/blob/0431acb4f34751af44c664b0b0a6f36b0cd147b3/rlp/tests/tests.rs#L222-L231
@@ -18,4 +18,3 @@ fn encode_bytes(input: H160, expected: Vec<u8>) {
 
     assert_eq!(stream.out(), expected);
 }
-

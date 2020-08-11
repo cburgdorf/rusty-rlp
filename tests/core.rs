@@ -1,8 +1,8 @@
 #![feature(test)]
 
-use bytes::{Bytes, BytesMut, BufMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use hex_literal::hex;
-use rlp::{Rlp, RlpStream, Encodable, DecoderError, Decodable};
+use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
 extern crate test;
 
@@ -18,7 +18,6 @@ struct FictiveType {
 
 impl Decodable for FictiveType {
     fn decode(r: &Rlp) -> Result<Self, DecoderError> {
-
         //let mut val1: [u8; 1] = Default::default();
         //val1.copy_from_slice(r.at(0)?.data()?);
         let val1 = BytesMut::from(r.at(0)?.data()?).freeze();
@@ -51,12 +50,11 @@ mod tests {
     #[bench]
     fn bench_encode_u64(b: &mut Bencher) {
         b.iter(|| {
-			let mut stream = rlp::RlpStream::new();
-			stream.append(&0x1023_4567_89ab_cdefu64);
-			let _ = stream.out();
-		})
+            let mut stream = rlp::RlpStream::new();
+            stream.append(&0x1023_4567_89ab_cdefu64);
+            let _ = stream.out();
+        })
     }
-
 
     // #[test]
     // fn test_encode_list() {
@@ -77,13 +75,13 @@ mod tests {
             .append(&577777777777u64)
             .append(&400000000000u64)
             .append(&200000000000u64);
-            //.append_raw(&hex!("010efbef67941f79b2"), 1);
-            // .append_raw(&hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"), 1)
-            // .append_raw(&hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"), 1);
-            //.encoder().encode_value(&hex!("05"));// .append_list(&hex!("05"));
-            // stream.encoder().encode_value(&hex!("010efbef67941f79b2"))
-            // stream.encoder().encode_value(&hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))
-            // stream.encoder().encode_value(&hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"));
+        //.append_raw(&hex!("010efbef67941f79b2"), 1);
+        // .append_raw(&hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"), 1)
+        // .append_raw(&hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"), 1);
+        //.encoder().encode_value(&hex!("05"));// .append_list(&hex!("05"));
+        // stream.encoder().encode_value(&hex!("010efbef67941f79b2"))
+        // stream.encoder().encode_value(&hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))
+        // stream.encoder().encode_value(&hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"));
         //assert!(!stream.is_finished());
         //stream.finalize_unbounded_list();
         //assert!(stream.is_finished());
@@ -93,7 +91,10 @@ mod tests {
         // let decoded:std::vec::Vec<u32> = rlp::decode_list(&encoded);
         //println!("{}",hex::encode(stream.out()));
 
-        assert_eq!(format!("{:?}", hex::encode(stream.out())), "\"d3058586863d3c71855d21dba000852e90edd000\"");
+        assert_eq!(
+            format!("{:?}", hex::encode(stream.out())),
+            "\"d3058586863d3c71855d21dba000852e90edd000\""
+        );
         //assert_eq!(format!("{:?}", stream.drain()), "[1, 2]");
     }
 
@@ -121,7 +122,10 @@ mod tests {
         // val1.copy_from_slice(rlp.at(0).unwrap().data().unwrap());
         print!("AAA{:?}", rlp.val_at::<u64>(1).unwrap());
 
-        assert_eq!(format!("{}", rlp), "[\"0x05\", \"0x86863d3c71\", \"0x5d21dba000\", \"0x2e90edd000\"]");
+        assert_eq!(
+            format!("{}", rlp),
+            "[\"0x05\", \"0x86863d3c71\", \"0x5d21dba000\", \"0x2e90edd000\"]"
+        );
     }
 
     #[test]
@@ -134,10 +138,10 @@ mod tests {
         let rlp: FictiveType = rlp::decode(&data).unwrap();
         println!("{:?}", rlp);
 
-        println!("{}",hex::encode(rlp.val1));
-        println!("{}",hex::encode(rlp.val2));
-        println!("{}",hex::encode(rlp.val3));
-        println!("{}",hex::encode(rlp.val4));
+        println!("{}", hex::encode(rlp.val1));
+        println!("{}", hex::encode(rlp.val2));
+        println!("{}", hex::encode(rlp.val3));
+        println!("{}", hex::encode(rlp.val4));
         //89010efbef67941f79b2
         //assert_eq!(format!("{:?}", rlp), "[\"0x05\", \"0x010efbef67941f79b2\", \"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\", \"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\"]");
         //assert_eq!(format!("{}", rlp), "[\"0x05\", \"0x010efbef67941f79b2\", \"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\", \"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\"]");
@@ -153,23 +157,22 @@ mod tests {
     }
 
     // fn bench_encode_u256c (b: &mut Bencher) {
-	// 	b.iter(|| {
-	// 		let mut stream = rlp::RlpStream::new();
-	// 		let uint: primitive_types::U256 = "8090a0b0c0d0e0f00910203040506077000000000000000100000000000012f0".into();
-	// 		stream.append(&uint);
-	// 		let _ = stream.out();
-	// 	})
+    // 	b.iter(|| {
+    // 		let mut stream = rlp::RlpStream::new();
+    // 		let uint: primitive_types::U256 = "8090a0b0c0d0e0f00910203040506077000000000000000100000000000012f0".into();
+    // 		stream.append(&uint);
+    // 		let _ = stream.out();
+    // 	})
     // }
 
     #[bench]
     fn bench_encode_1000_empty_lists(b: &mut Bencher) {
-		b.iter(|| {
-			let mut stream = rlp::RlpStream::new_list(1000);
-			for _ in 0..1000 {
-				stream.begin_list(0);
-			}
-			let _ = stream.out();
-		})
-	}
-
+        b.iter(|| {
+            let mut stream = rlp::RlpStream::new_list(1000);
+            for _ in 0..1000 {
+                stream.begin_list(0);
+            }
+            let _ = stream.out();
+        })
+    }
 }
