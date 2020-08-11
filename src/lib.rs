@@ -3,7 +3,7 @@ use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::exceptions::Exception;
 use pyo3::types::{PyBytes, PyList};
 
-use rlp::{DecoderError, Prototype};
+use rlp::{Prototype};
 
 create_exception!(rusty_rlp, EncodingError, Exception);
 create_exception!(rusty_rlp, DecodingError, Exception);
@@ -44,7 +44,7 @@ fn enc<'a>(stream: &'a mut rlp::RlpStream, val: &PyAny, py: pyo3::Python) -> Res
     stream.append(&bytes_item.as_bytes());
     Ok(stream)
   } else {
-    return Err(EncodingError::py_err(format!("Can not encode value {:?}", val)))
+    Err(EncodingError::py_err(format!("Can not encode value {:?}", val)))
   }
 }
 
