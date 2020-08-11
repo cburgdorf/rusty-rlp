@@ -1,7 +1,9 @@
 import pytest
 from rlp import decode
 from rlp.codec import encode_raw
-from target.release import rusty_rlp
+import rusty_rlp
+
+from eth_utils import decode_hex
 
 
 @pytest.mark.parametrize(
@@ -45,14 +47,13 @@ def test_invalid_serializations(rlp_data):
 
 
 @pytest.mark.parametrize(
-    'rlp_data',
+    'rlp_data, expected_error',
     (
-        None,
-        'asdf',
+        (None, TypeError),
+        ('asdf', TypeError),
+        (decode_hex('b8056d6f6f7365'), rusty_rlp.DecodingError),
     ),
 )
-def test_invalid_deserializations(rlp_data):
-    # FIXME: For some reason, this gives us TypeError, when we would rather like to see
-    # a rusty_rlp.DecodingError ¯\_(ツ)_/¯. But if we ever fix it, this will start failing.
-    with pytest.raises(TypeError):
+def test_invalid_deserializations(rlp_data, expected_error):
+    with pytest.raises(expected_error):
         rusty_rlp.decode_raw(rlp_data)

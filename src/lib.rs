@@ -8,18 +8,29 @@ use rlp::Prototype;
 create_exception!(rusty_rlp, EncodingError, Exception);
 create_exception!(rusty_rlp, DecodingError, Exception);
 
+// We can not implement From for rlp::DecoderError as it is in a foreign crate. Hence, we use
+// map_err and implement From on _DecoderError instead.
+struct _DecoderError(rlp::DecoderError);
+impl std::convert::From<_DecoderError> for PyErr {
+    fn from(err: _DecoderError) -> PyErr {
+        DecodingError::py_err(err.0.to_string())
+    }
+}
+
 fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
     match r.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
-        Ok(Prototype::Data(_)) => Ok(PyBytes::new(py, r.data().unwrap()).to_object(py)),
+        Ok(Prototype::Data(_)) => {
+            Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
+        }
         Ok(Prototype::List(_)) => {
             let current = PyList::empty(py);
             for item in r.iter() {
                 match item.prototype() {
-                    Ok(Prototype::Data(_)) => current
-                        .append(PyBytes::new(py, item.data().unwrap()).to_object(py))
-                        .unwrap(),
-                    Ok(Prototype::List(_)) => current.append(to_py(item, py).unwrap()).unwrap(),
+                    Ok(Prototype::Data(_)) => current.append(
+                        PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
+                    )?,
+                    Ok(Prototype::List(_)) => current.append(to_py(item, py)?)?,
                     Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
                     _ => return Err(DecodingError::py_err("Invariant")),
                 };
