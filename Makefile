@@ -7,7 +7,7 @@ all:
 venv:
 	test -d venv || python3 -m venv venv
 	. venv/bin/activate
-	pip install maturin twine
+	pip install maturin pytest rlp eth_utils twine
 
 
 .PHONY: develop
@@ -25,7 +25,7 @@ lint:
 .ONESHELL:
 test: develop
 	. venv/bin/activate
-	python -m unittest test/test_procmaps.py
+	python -m pytest python_tests.py
 
 .PHONY: build
 .ONESHELL:
