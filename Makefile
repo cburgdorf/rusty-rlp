@@ -16,6 +16,11 @@ develop: venv
 	. venv/bin/activate
 	maturin develop
 
+.PHONY: lint
+.ONESHELL:
+lint: 
+	cargo clippy
+
 .PHONY: test
 .ONESHELL:
 test: develop
