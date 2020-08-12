@@ -16,14 +16,6 @@ fn decode_strings(input: Vec<u8>, expected: &str) {
     assert_eq!(&out, expected);
 }
 
-// #[rstest(input, expected,
-//     case(vec![101, 102], vec![101, 102]),
-//     // case(vec![0x83, 0x64, 0x6f, 0x67], "dog"),
-// )]
-// fn decode_binary(input: Vec<u8>, expected: Vec<u8>) {
-//     let out:Vec<u16> = rlp::decode(&input).unwrap();
-//     assert_eq!(out, expected);
-// }
 
 #[test]
 fn decode_block_header() {

@@ -27,6 +27,27 @@ test: develop
 	. venv/bin/activate
 	python -m pytest python_tests.py
 
+.PHONY: benchmark
+.ONESHELL:
+benchmark: venv
+	. venv/bin/activate
+	cargo build --release
+	cp target/release/librusty_rlp.so target/release/rusty_rlp.so
+	echo "PyRLP Roundtrip (NOT THIS LIBRARY)"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_roundtrip()'
+	echo "Rusty RLP Roundtrip"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_roundtrip()'
+
+	echo "PyRLP Decoding (NOT THIS LIBRARY)"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_decoding()'
+	echo "Rusty RLP Decoding"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_decoding()'
+
+	echo "PyRLP Encoding (NOT THIS LIBRARY)"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_pyrlp_encoding()'
+	echo "Rusty RLP Encoding"
+	python -m timeit -n 300 -u msec  -s'import benchmark' 'benchmark.bench_rustyrlp_encoding()'
+
 .PHONY: build
 .ONESHELL:
 build: venv

@@ -1,10 +1,27 @@
+
 [package]
 name = "rusty-rlp"
 version = "0.1.0"
 authors = ["Christoph Burgdorf <christoph.burgdorf@gmail.com>"]
 edition = "2018"
+description = "Python RLP serialization/deserialization based on a rapid fast Rust implementation."
+homepage = "https://github.com/cburgdorf/rusty-rlp"
+repository = "https://github.com/cburgdorf/rusty-rlp"
+readme = "README.md"
+license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.maturin]
+classifier = [
+  "Intended Audience :: Developers",
+  "Programming Language :: Rust",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.5",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+]
 
 [lib]
 name = "rusty_rlp"
@@ -15,14 +32,11 @@ version = "0.11.1"
 features = ["extension-module"]
 
 [dependencies]
-ethereum-types = "0.7.0"
+
 rlp = "0.4.5"
-primitive-types = "0.7.2"
-hex-literal = "0.3.0"
-hex-slice = "0.1.4"
-hex = "0.4.2"
-bytes = "0.5.6"
 
 [dev-dependencies]
 rstest = "0.6.4"
-
+hex-literal = "0.3.0"
+hex = "0.4.2"
+bytes = "0.5.6"

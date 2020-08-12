@@ -1,11 +1,7 @@
-import timeit
 import random
 from typing import Sequence, Tuple
 
-import rlp
-from eth_utils import encode_hex, decode_hex
-from rlp import encode, decode
-from rlp.sedes import raw, big_endian_int
+from rlp import decode
 from rlp.codec import encode_raw
 
 from target.release import rusty_rlp
