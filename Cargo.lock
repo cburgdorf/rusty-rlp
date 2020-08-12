@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-rlp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",

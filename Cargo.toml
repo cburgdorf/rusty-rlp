@@ -1,7 +1,7 @@
 
 [package]
 name = "rusty-rlp"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Christoph Burgdorf <christoph.burgdorf@gmail.com>"]
 edition = "2018"
 description = "Python RLP serialization/deserialization based on a rapid fast Rust implementation."
@@ -27,13 +27,13 @@ classifier = [
 name = "rusty_rlp"
 crate-type = ["cdylib"]
 
-[dependencies.pyo3]
-version = "0.11.1"
-features = ["extension-module"]
-
 [dependencies]
 
 rlp = "0.4.5"
+
+[dependencies.pyo3]
+version = "0.11.1"
+features = ["extension-module"]
 
 [dev-dependencies]
 rstest = "0.6.4"
