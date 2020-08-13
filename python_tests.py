@@ -62,3 +62,15 @@ def test_invalid_serializations(rlp_data):
 def test_invalid_deserializations(rlp_data, expected_error):
     with pytest.raises(expected_error):
         rusty_rlp.decode_raw(rlp_data)
+
+
+@pytest.mark.parametrize(
+    'rlp_data, expected',
+    (
+        (decode_hex('0xc000'), []),
+        (decode_hex('0xcc83646f6783676f6483636174'), [ b"dog", b"god", b"cat" ]),
+        (decode_hex('0xc6827a77c10401'), [b'zw', [b'\x04'], b'\x01']),
+    ),
+)
+def test_decode_special_cases(rlp_data, expected):
+    assert rusty_rlp.decode_raw(rlp_data) == expected
