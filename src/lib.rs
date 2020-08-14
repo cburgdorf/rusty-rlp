@@ -17,12 +17,12 @@ impl std::convert::From<_DecoderError> for PyErr {
     }
 }
 
-fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
+fn to_py(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
     match r.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
         Ok(Prototype::Data(len)) => {
             let payload_info = r.payload_info().map_err(_DecoderError)?;
-            if payload_info.header_len + len < r.as_raw().len() {
+            if strict && payload_info.header_len + len < r.as_raw().len() {
                 return Err(DecodingError::py_err("Trailing bytes"));
             }
             Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
@@ -30,19 +30,23 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
         Ok(Prototype::List(len)) => {
             let payload_info = rlp::PayloadInfo::from(r.as_raw()).unwrap();
             let current = PyList::empty(py);
-            if len == 0 && payload_info.header_len + len < r.as_raw().len() {
+            if strict && len == 0 && payload_info.header_len + len < r.as_raw().len() {
                 return Err(DecodingError::py_err("Trailing bytes"));
             }
             for i in 0..len {
                 let (item, offset) = r.at_with_offset(i).unwrap();
                 if offset > payload_info.value_len {
-                    return Err(DecodingError::py_err("Trailing bytes"));
+                    if strict {
+                        return Err(DecodingError::py_err("Trailing bytes"));
+                    } else {
+                        continue;
+                    }
                 }
                 match item.prototype() {
                     Ok(Prototype::Data(_)) => current.append(
                         PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
                     )?,
-                    Ok(Prototype::List(_)) => current.append(to_py(item, py)?)?,
+                    Ok(Prototype::List(_)) => current.append(to_py(strict, item, py)?)?,
                     Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
                     _ => return Err(DecodingError::py_err("Invariant")),
                 }
@@ -87,8 +91,8 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 }
 
 #[pyfunction]
-fn decode_raw(rlp_bytes: Vec<u8>, py: pyo3::Python) -> PyResult<PyObject> {
-    to_py(rlp::Rlp::new(&rlp_bytes), py)
+fn decode_raw(rlp_bytes: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
+    to_py(strict, rlp::Rlp::new(&rlp_bytes), py)
 }
 
 #[pyfunction]

@@ -27,7 +27,7 @@ def test_decode_raw(input):
     assert pyrlp_encoded == rustyrlp_encoded
 
     pyrlp_decoded = decode(pyrlp_encoded)
-    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded)
+    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded, True)
 
     assert pyrlp_decoded == rustyrlp_decoded == input
 
@@ -68,7 +68,7 @@ def test_invalid_serializations(rlp_data):
 )
 def test_invalid_deserializations(rlp_data, expected_error):
     with pytest.raises(expected_error):
-        rusty_rlp.decode_raw(rlp_data)
+        rusty_rlp.decode_raw(rlp_data, True)
 
 
 @pytest.mark.parametrize(
@@ -80,4 +80,19 @@ def test_invalid_deserializations(rlp_data, expected_error):
     ),
 )
 def test_decode_special_cases(rlp_data, expected):
-    assert rusty_rlp.decode_raw(rlp_data) == expected
+    assert rusty_rlp.decode_raw(rlp_data, True) == expected
+
+
+@pytest.mark.parametrize(
+    'rlp_data, expected',
+    (
+        # Trailing bytes to empty list
+        (decode_hex('0xc000'), []),
+        #trailing bytes to https://github.com/ethereum/pyrlp/blob/37396698aeb949932e70a53fa10f3046b7915bf3/tests/rlptest.json#L68
+        (decode_hex('0xcc83646f6783676f648363617400'), [b'dog', b'god', b'cat']),
+        # trailing bytes to short string
+        (decode_hex('0x83646f6700'), b'dog'),
+    ),
+)
+def test_nonstrict_deserializations(rlp_data, expected):
+    assert rusty_rlp.decode_raw(rlp_data, False) == expected
