@@ -55,6 +55,8 @@ def test_invalid_serializations(rlp_data):
         (decode_hex('b8056d6f6f7365'), rusty_rlp.DecodingError),
         # trailing bytes to https://github.com/ethereum/pyrlp/blob/37396698aeb949932e70a53fa10f3046b7915bf3/tests/rlptest.json#L68
         (decode_hex('0xcc83646f6783676f648363617400'), rusty_rlp.DecodingError),
+        # trailing bytes to short string
+        (decode_hex('0x83646f6700'), rusty_rlp.DecodingError),
         (b'', rusty_rlp.DecodingError),
         (b'\x83do', rusty_rlp.DecodingError),
         (b'\xb8\x00', rusty_rlp.DecodingError),

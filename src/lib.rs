@@ -20,7 +20,11 @@ impl std::convert::From<_DecoderError> for PyErr {
 fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
     match r.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
-        Ok(Prototype::Data(_)) => {
+        Ok(Prototype::Data(len)) => {
+            let payload_info = r.payload_info().map_err(_DecoderError)?;
+            if payload_info.header_len + len < r.as_raw().len() {
+                return Err(DecodingError::py_err("Trailing bytes"));
+            }
             Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
         }
         Ok(Prototype::List(len)) => {
