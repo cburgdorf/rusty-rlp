@@ -95,38 +95,9 @@ fn decode_raw(rlp_bytes: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<Py
     to_py(strict, rlp::Rlp::new(&rlp_bytes), py)
 }
 
-#[pyfunction]
-fn decode_fictive_type(rlp_bytes: Vec<u8>) -> PyResult<(u64, u64, u64, u64)> {
-    let rlp = rlp::Rlp::new(&rlp_bytes);
-
-    Ok((
-        rlp.val_at::<u64>(0).unwrap(),
-        rlp.val_at::<u64>(1).unwrap(),
-        rlp.val_at::<u64>(2).unwrap(),
-        rlp.val_at::<u64>(3).unwrap(),
-    ))
-}
-
-#[pyfunction]
-fn encode_fictive_type(fictive_type: (u64, u64, u64, u64)) -> PyResult<Vec<u8>> {
-    let mut stream = rlp::RlpStream::new();
-    // //stream.begin_unbounded_list();
-    let (val1, val2, val3, val4) = fictive_type;
-    stream
-        .begin_list(4)
-        .append(&val1)
-        .append(&val2)
-        .append(&val3)
-        .append(&val4);
-
-    Ok(stream.out())
-}
-
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rusty_rlp(_py: Python, module: &PyModule) -> PyResult<()> {
-    module.add_wrapped(wrap_pyfunction!(decode_fictive_type))?;
-    module.add_wrapped(wrap_pyfunction!(encode_fictive_type))?;
     module.add_wrapped(wrap_pyfunction!(decode_raw))?;
     module.add_wrapped(wrap_pyfunction!(encode_raw))?;
     module.add("DecodingError", _py.get_type::<DecodingError>())?;
