@@ -30,6 +30,9 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
         Ok(Prototype::List(len)) => {
             let payload_info = rlp::PayloadInfo::from(r.as_raw()).unwrap();
             let current = PyList::empty(py);
+            if len == 0 && payload_info.header_len + len < r.as_raw().len() {
+                return Err(DecodingError::py_err("Trailing bytes"));
+            }
             for i in 0..len {
                 let (item, offset) = r.at_with_offset(i).unwrap();
                 if offset > payload_info.value_len {

@@ -51,6 +51,8 @@ def test_invalid_serializations(rlp_data):
     (
         (None, TypeError),
         ('asdf', TypeError),
+        # Empty list with trailing bytes
+        (decode_hex('0xc000'), rusty_rlp.DecodingError),
         # https://github.com/ethereum/pyrlp/blob/37396698aeb949932e70a53fa10f3046b7915bf3/tests/test_codec.py#L47-L50
         (decode_hex('b8056d6f6f7365'), rusty_rlp.DecodingError),
         # trailing bytes to https://github.com/ethereum/pyrlp/blob/37396698aeb949932e70a53fa10f3046b7915bf3/tests/rlptest.json#L68
@@ -72,7 +74,7 @@ def test_invalid_deserializations(rlp_data, expected_error):
 @pytest.mark.parametrize(
     'rlp_data, expected',
     (
-        (decode_hex('0xc000'), []),
+        (decode_hex('0xc0'), []),
         (decode_hex('0xcc83646f6783676f6483636174'), [ b"dog", b"god", b"cat" ]),
         (decode_hex('0xc6827a77c10401'), [b'zw', [b'\x04'], b'\x01']),
     ),
