@@ -60,7 +60,7 @@ fn _decode_raw(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, 
     }
 }
 
-fn enc<'a>(
+fn _encode_raw<'a>(
     stream: &'a mut rlp::RlpStream,
     val: &PyAny,
     py: pyo3::Python,
@@ -69,7 +69,7 @@ fn enc<'a>(
     if let Ok(list_item) = val.downcast::<PyList>() {
         stream.begin_unbounded_list();
         for item in list_item {
-            enc(stream, item, py)?;
+            _encode_raw(stream, item, py)?;
         }
         stream.finalize_unbounded_list();
         Ok(stream)
@@ -87,7 +87,7 @@ fn enc<'a>(
 #[pyfunction]
 fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
     let mut r = rlp::RlpStream::new();
-    match enc(&mut r, &val.cast_as(py).unwrap(), py) {
+    match _encode_raw(&mut r, &val.cast_as(py).unwrap(), py) {
         Ok(_) => Ok(PyBytes::new(py, &r.out()).to_object(py)),
         Err(e) => Err(e),
     }
