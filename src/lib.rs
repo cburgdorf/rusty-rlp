@@ -24,31 +24,31 @@ enum ListOrBytes<'a> {
 
 fn _decode_raw<'a>(
     strict: bool,
-    r: rlp::Rlp,
+    rlp_val: rlp::Rlp,
     py: pyo3::Python<'a>,
 ) -> Result<ListOrBytes<'a>, PyErr> {
-    match r.prototype() {
+    match rlp_val.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
         Ok(Prototype::Data(len)) => {
             if strict {
-                let payload_info = r.payload_info().map_err(_DecoderError)?;
-                if payload_info.header_len + len < r.as_raw().len() {
+                let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
+                if payload_info.header_len + len < rlp_val.as_raw().len() {
                     return Err(DecodingError::py_err("Trailing bytes"));
                 }
             }
             Ok(ListOrBytes::Bytes(PyBytes::new(
                 py,
-                r.data().map_err(_DecoderError)?,
+                rlp_val.data().map_err(_DecoderError)?,
             )))
         }
         Ok(Prototype::List(len)) => {
-            let payload_info = r.payload_info().map_err(_DecoderError)?;
-            if strict && len == 0 && payload_info.header_len + len < r.as_raw().len() {
+            let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
+            if strict && len == 0 && payload_info.header_len + len < rlp_val.as_raw().len() {
                 return Err(DecodingError::py_err("Trailing bytes"));
             }
             let current = PyList::empty(py);
             for i in 0..len {
-                let (item, offset) = r.at_with_offset(i).map_err(_DecoderError)?;
+                let (item, offset) = rlp_val.at_with_offset(i).map_err(_DecoderError)?;
                 if offset > payload_info.value_len {
                     if strict {
                         return Err(DecodingError::py_err("Trailing bytes"));
@@ -101,16 +101,16 @@ fn _encode_raw<'a>(
 
 #[pyfunction]
 fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
-    let mut r = rlp::RlpStream::new();
-    match _encode_raw(&mut r, &val.cast_as(py).unwrap(), py) {
-        Ok(_) => Ok(PyBytes::new(py, &r.out()).to_object(py)),
+    let mut rlp_stream = rlp::RlpStream::new();
+    match _encode_raw(&mut rlp_stream, &val.cast_as(py).unwrap(), py) {
+        Ok(_) => Ok(PyBytes::new(py, &rlp_stream.out()).to_object(py)),
         Err(e) => Err(e),
     }
 }
 
 #[pyfunction]
-fn decode_raw(rlp_bytes: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
-  match _decode_raw(strict, rlp::Rlp::new(&rlp_bytes), py) {
+fn decode_raw(rlp_val: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
+    match _decode_raw(strict, rlp::Rlp::new(&rlp_val), py) {
         Ok(ListOrBytes::List(val)) => Ok(val.to_object(py)),
         Ok(ListOrBytes::Bytes(val)) => Ok(val.to_object(py)),
         Err(err) => Err(err),
