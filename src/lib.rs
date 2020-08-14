@@ -24,18 +24,21 @@ fn to_py(r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
             Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
         }
         Ok(Prototype::List(len)) => {
+            let payload_info = rlp::PayloadInfo::from(r.as_raw()).unwrap();
             let current = PyList::empty(py);
             for i in 0..len {
-              let item = r.at(i).unwrap();
-              match item.prototype() {
-                Ok(Prototype::Data(_)) => current.append(
-                  PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
-              )?,
-              Ok(Prototype::List(_)) => current.append(to_py(item, py)?)?,
-              Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
-              _ => return Err(DecodingError::py_err("Invariant")),
-
-              }
+                let (item, offset) = r.at_with_offset(i).unwrap();
+                if offset > payload_info.value_len {
+                    return Err(DecodingError::py_err("Trailing bytes"));
+                }
+                match item.prototype() {
+                    Ok(Prototype::Data(_)) => current.append(
+                        PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
+                    )?,
+                    Ok(Prototype::List(_)) => current.append(to_py(item, py)?)?,
+                    Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
+                    _ => return Err(DecodingError::py_err("Invariant")),
+                }
             }
             Ok(current.to_object(py))
         }

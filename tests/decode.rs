@@ -16,7 +16,6 @@ fn decode_strings(input: Vec<u8>, expected: &str) {
     assert_eq!(&out, expected);
 }
 
-
 #[test]
 fn decode_block_header() {
     // Block Header example from
