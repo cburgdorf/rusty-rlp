@@ -40,7 +40,7 @@ def check_correctness():
         assert pyrlp_bytes == rustyrlp_bytes
 
         pyrlp_decoded = decode(pyrlp_bytes)
-        rustyrlp_decoded = rusty_rlp.decode_raw(pyrlp_bytes)
+        rustyrlp_decoded = rusty_rlp.decode_raw(pyrlp_bytes, True)
 
         assert pyrlp_decoded == rustyrlp_decoded
 
@@ -55,7 +55,7 @@ def bench_pyrlp_roundtrip():
 def bench_rustyrlp_roundtrip():
     for sample in get_decoded_samples(100):
         rlp_bytes = rusty_rlp.encode_raw(sample)
-        decoded = rusty_rlp.decode_raw(rlp_bytes)
+        decoded = rusty_rlp.decode_raw(rlp_bytes, True)
         assert decoded == sample
 
 
@@ -66,7 +66,7 @@ def bench_pyrlp_decoding():
 
 def bench_rustyrlp_decoding():
     for index, sample in enumerate(ENCODED_SAMPLES):
-        decoded = rusty_rlp.decode_raw(sample)
+        decoded = rusty_rlp.decode_raw(sample, True)
         assert decoded == DECODED_SAMPLES[index]
 
 
