@@ -17,7 +17,16 @@ impl std::convert::From<_DecoderError> for PyErr {
     }
 }
 
-fn _decode_raw(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
+enum ListOrBytes<'a> {
+    List(&'a PyList),
+    Bytes(&'a PyBytes),
+}
+
+fn _decode_raw<'a>(
+    strict: bool,
+    r: rlp::Rlp,
+    py: pyo3::Python<'a>,
+) -> Result<ListOrBytes<'a>, PyErr> {
     match r.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
         Ok(Prototype::Data(len)) => {
@@ -27,8 +36,10 @@ fn _decode_raw(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, 
                     return Err(DecodingError::py_err("Trailing bytes"));
                 }
             }
-
-            Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
+            Ok(ListOrBytes::Bytes(PyBytes::new(
+                py,
+                r.data().map_err(_DecoderError)?,
+            )))
         }
         Ok(Prototype::List(len)) => {
             let payload_info = r.payload_info().map_err(_DecoderError)?;
@@ -46,15 +57,19 @@ fn _decode_raw(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, 
                     }
                 }
                 match item.prototype() {
-                    Ok(Prototype::Data(_)) => current.append(
-                        PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
-                    )?,
-                    Ok(Prototype::List(_)) => current.append(_decode_raw(strict, item, py)?)?,
+                    Ok(Prototype::Data(_)) => {
+                        current.append(PyBytes::new(py, item.data().map_err(_DecoderError)?))?
+                    }
+                    Ok(Prototype::List(_)) => match _decode_raw(strict, item, py) {
+                        Ok(ListOrBytes::List(val)) => current.append(val)?,
+                        Ok(ListOrBytes::Bytes(val)) => current.append(val)?,
+                        _ => return Err(DecodingError::py_err("Invariant")),
+                    },
                     Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
                     _ => return Err(DecodingError::py_err("Invariant")),
                 }
             }
-            Ok(current.to_object(py))
+            Ok(ListOrBytes::List(current))
         }
         Err(e) => Err(DecodingError::py_err(format!("{:?}", e))),
     }
@@ -95,7 +110,11 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 
 #[pyfunction]
 fn decode_raw(rlp_bytes: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
-    _decode_raw(strict, rlp::Rlp::new(&rlp_bytes), py)
+  match _decode_raw(strict, rlp::Rlp::new(&rlp_bytes), py) {
+        Ok(ListOrBytes::List(val)) => Ok(val.to_object(py)),
+        Ok(ListOrBytes::Bytes(val)) => Ok(val.to_object(py)),
+        Err(err) => Err(err),
+    }
 }
 
 /// A Python module implemented in Rust.
