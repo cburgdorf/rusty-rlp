@@ -53,7 +53,7 @@ fn _decode_raw<'a>(
                     if strict {
                         return Err(DecodingError::py_err("Trailing bytes"));
                     } else {
-                        continue;
+                        return Ok(ListOrBytes::List(current));
                     }
                 }
                 match item.prototype() {
