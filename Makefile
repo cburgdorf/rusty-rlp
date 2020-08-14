@@ -31,6 +31,7 @@ test: develop
 .ONESHELL:
 benchmark: venv
 	. venv/bin/activate
+	rm -rf target/release/rusty_rlp.so
 	cargo build --release
 	cp target/release/librusty_rlp.so target/release/rusty_rlp.so
 	echo "PyRLP Roundtrip (NOT THIS LIBRARY)"
