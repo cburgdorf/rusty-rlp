@@ -80,7 +80,6 @@ fn _encode_raw<'a>(
     val: &PyAny,
     py: pyo3::Python,
 ) -> Result<&'a mut rlp::RlpStream, pyo3::PyErr> {
-    // TODO: Support any sequence or iterable here
     if let Ok(list_item) = val.downcast::<PyList>() {
         stream.begin_unbounded_list();
         for item in list_item {
