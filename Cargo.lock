@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-rlp"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "bytes 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
