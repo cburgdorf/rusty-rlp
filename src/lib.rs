@@ -17,14 +17,17 @@ impl std::convert::From<_DecoderError> for PyErr {
     }
 }
 
-fn to_py(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
+fn _decode_raw(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr> {
     match r.prototype() {
         Ok(Prototype::Null) => Err(DecodingError::py_err("Invariant")),
         Ok(Prototype::Data(len)) => {
-            let payload_info = r.payload_info().map_err(_DecoderError)?;
-            if strict && payload_info.header_len + len < r.as_raw().len() {
-                return Err(DecodingError::py_err("Trailing bytes"));
+            if strict {
+                let payload_info = r.payload_info().map_err(_DecoderError)?;
+                if payload_info.header_len + len < r.as_raw().len() {
+                    return Err(DecodingError::py_err("Trailing bytes"));
+                }
             }
+
             Ok(PyBytes::new(py, r.data().map_err(_DecoderError)?).to_object(py))
         }
         Ok(Prototype::List(len)) => {
@@ -46,7 +49,7 @@ fn to_py(strict: bool, r: rlp::Rlp, py: pyo3::Python) -> Result<PyObject, PyErr>
                     Ok(Prototype::Data(_)) => current.append(
                         PyBytes::new(py, item.data().map_err(_DecoderError)?).to_object(py),
                     )?,
-                    Ok(Prototype::List(_)) => current.append(to_py(strict, item, py)?)?,
+                    Ok(Prototype::List(_)) => current.append(_decode_raw(strict, item, py)?)?,
                     Err(e) => return Err(DecodingError::py_err(format!("{:?}", e))),
                     _ => return Err(DecodingError::py_err("Invariant")),
                 }
@@ -92,7 +95,7 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 
 #[pyfunction]
 fn decode_raw(rlp_bytes: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
-    to_py(strict, rlp::Rlp::new(&rlp_bytes), py)
+    _decode_raw(strict, rlp::Rlp::new(&rlp_bytes), py)
 }
 
 /// A Python module implemented in Rust.
