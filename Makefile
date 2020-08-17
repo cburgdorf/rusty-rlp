@@ -19,7 +19,8 @@ develop: venv
 .PHONY: lint
 .ONESHELL:
 lint: 
-	cargo clippy
+	cargo fmt
+	cargo clippy --all-targets --all-features
 
 .PHONY: test
 .ONESHELL:
