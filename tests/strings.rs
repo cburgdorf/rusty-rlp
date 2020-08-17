@@ -1,6 +1,5 @@
 #![feature(test)]
 
-use rlp;
 use rstest::rstest;
 
 #[rstest(input, expected,
