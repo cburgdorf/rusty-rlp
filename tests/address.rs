@@ -1,6 +1,5 @@
 use ethereum_types::H160;
 use hex_literal::hex;
-use rlp;
 use rstest::rstest;
 
 // This is encoded as a string. Wouldn't an address be formatted as a pure binary instead?

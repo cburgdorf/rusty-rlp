@@ -1,10 +1,5 @@
 #![feature(test)]
 
-use rlp;
-use rlp::Prototype;
-use rstest::rstest;
-use std::str;
-
 enum Data {
     Str(String),
     Int(u16),

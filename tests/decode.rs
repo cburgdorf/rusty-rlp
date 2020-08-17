@@ -1,6 +1,5 @@
 #![feature(test)]
 use hex_literal::hex;
-use rlp;
 use rstest::rstest;
 
 #[rstest(input, expected,
