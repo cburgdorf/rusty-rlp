@@ -7,7 +7,7 @@ all:
 venv:
 	test -d venv || python3 -m venv venv
 	. venv/bin/activate
-	pip install maturin pytest rlp eth_utils twine
+	pip install -r requirements-dev.txt
 
 
 .PHONY: develop
@@ -60,6 +60,7 @@ build: venv
 .ONESHELL:
 dist: venv
 	. venv/bin/activate
+	pip install twine
 	rm -rf target/wheels/*
 	docker run --rm -v $(shell pwd):/io konstin2/maturin build --release --strip
 	twine upload target/wheels/*
