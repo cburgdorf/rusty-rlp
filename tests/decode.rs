@@ -1,4 +1,3 @@
-#![feature(test)]
 use hex_literal::hex;
 use rstest::rstest;
 

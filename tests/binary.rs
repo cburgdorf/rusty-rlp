@@ -1,5 +1,3 @@
-#![feature(test)]
-
 use rstest::rstest;
 
 #[rstest(input, expected,

@@ -1,5 +1,3 @@
-#![feature(test)]
-
 enum Data {
     Str(String),
     Int(u16),
