@@ -44,18 +44,25 @@ fn _decode_raw<'a>(
         Ok(Prototype::List(len)) => {
             let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
             if strict && len == 0 && payload_info.header_len + len < rlp_val.as_raw().len() {
-                return Err(DecodingError::py_err("Trailing bytes"));
+                return Err(DecodingError::py_err(format!(
+                    "Trailing bytes. Payload Info {:?}",
+                    payload_info
+                )));
             }
             let current = PyList::empty(py);
             for i in 0..len {
                 let (item, offset) = rlp_val.at_with_offset(i).map_err(_DecoderError)?;
-                if offset > payload_info.value_len {
-                    if strict {
-                        return Err(DecodingError::py_err("Trailing bytes"));
-                    } else {
-                        return Ok(ListOrBytes::List(current));
-                    }
+                if strict
+                    && rlp_val.as_raw().len() > (payload_info.header_len + payload_info.value_len)
+                {
+                    return Err(DecodingError::py_err(format!(
+                        "Trailing bytes. Payload Info {:?}",
+                        payload_info
+                    )));
+                } else if !strict && offset > payload_info.value_len {
+                    return Ok(ListOrBytes::List(current));
                 }
+
                 match item.prototype() {
                     Ok(Prototype::Data(_)) => {
                         current.append(PyBytes::new(py, item.data().map_err(_DecoderError)?))?

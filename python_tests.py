@@ -74,6 +74,9 @@ def test_invalid_deserializations(rlp_data, expected_error):
 @pytest.mark.parametrize(
     'rlp_data, expected',
     (
+        # The following case was taken from Py-EVM. Since it wasn't caught by the Py-RLP test suite, it
+        # is valuable to have here.
+        (decode_hex('0xf8518080808080a08591cad10d1692b94ac37d41f0834d4e350350926babfca8793c885bc846aa478080808080808080a0ed3e6bc5f6af82aec3a3d9ba1f06af4854631201347e2f6f2a5da66c7117355d8080'), [b'', b'', b'', b'', b'', b'\x85\x91\xca\xd1\r\x16\x92\xb9J\xc3}A\xf0\x83MN5\x03P\x92k\xab\xfc\xa8y<\x88[\xc8F\xaaG', b'', b'', b'', b'', b'', b'', b'', b'', b'\xed>k\xc5\xf6\xaf\x82\xae\xc3\xa3\xd9\xba\x1f\x06\xafHTc\x12\x014~/o*]\xa6lq\x175]', b'', b'']),
         (decode_hex('0xc0'), []),
         (decode_hex('0xcc83646f6783676f6483636174'), [ b"dog", b"god", b"cat" ]),
         (decode_hex('0xc6827a77c10401'), [b'zw', [b'\x04'], b'\x01']),
