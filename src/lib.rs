@@ -1,6 +1,6 @@
 use pyo3::exceptions::Exception;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyList};
+use pyo3::types::{PyBytes, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction};
 
 use rlp::Prototype;
@@ -88,6 +88,13 @@ fn _encode_raw<'a>(
     py: pyo3::Python,
 ) -> Result<&'a mut rlp::RlpStream, pyo3::PyErr> {
     if let Ok(list_item) = val.downcast::<PyList>() {
+        stream.begin_unbounded_list();
+        for item in list_item {
+            _encode_raw(stream, item, py)?;
+        }
+        stream.finalize_unbounded_list();
+        Ok(stream)
+    } else if let Ok(list_item) = val.downcast::<PyTuple>() {
         stream.begin_unbounded_list();
         for item in list_item {
             _encode_raw(stream, item, py)?;

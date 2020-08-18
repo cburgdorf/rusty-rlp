@@ -31,6 +31,23 @@ def test_decode_raw(input):
 
     assert pyrlp_decoded == rustyrlp_decoded == input
 
+@pytest.mark.parametrize(
+    'input, expected',
+    (
+        ((b'fdsa', (b'dfs', [b'jfdkl']),), [b'fdsa', [b'dfs', [b'jfdkl']]],),
+    )
+)
+def test_decode_tuple_as_list(input, expected):
+    pyrlp_encoded = encode_raw(input)
+    rustyrlp_encoded = rusty_rlp.encode_raw(input)
+
+    assert pyrlp_encoded == rustyrlp_encoded
+
+    pyrlp_decoded = decode(pyrlp_encoded)
+    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded, True)
+
+    assert pyrlp_decoded == rustyrlp_decoded == expected
+
 
 @pytest.mark.parametrize(
     'rlp_data',
