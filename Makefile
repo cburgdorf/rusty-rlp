@@ -26,7 +26,7 @@ lint:
 .ONESHELL:
 test: develop
 	. venv/bin/activate
-	python -m pytest python_tests.py
+	python -m pytest -vv python_tests.py
 
 .PHONY: benchmark
 .ONESHELL:

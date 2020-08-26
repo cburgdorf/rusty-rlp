@@ -51,7 +51,7 @@ fn _decode_raw<'a>(
             }
             let current = PyList::empty(py);
             for i in 0..len {
-                let (item, offset) = rlp_val.at_with_offset(i).map_err(_DecoderError)?;
+                let item = rlp_val.at(i).map_err(_DecoderError)?;
                 if strict
                     && rlp_val.as_raw().len() > (payload_info.header_len + payload_info.value_len)
                 {
@@ -59,7 +59,8 @@ fn _decode_raw<'a>(
                         "Trailing bytes. Payload Info {:?}",
                         payload_info
                     )));
-                } else if !strict && offset > payload_info.value_len {
+                // TODO: Investigate if that is the correct way to decide about termination of non-strict decoding
+                } else if !strict && item.as_raw() == [0] {
                     return Ok(ListOrBytes::List(current));
                 }
 
