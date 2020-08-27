@@ -37,11 +37,19 @@ fn _has_trailing_bytes(payload_info: &PayloadInfo, item_len: usize, rlp: &Rlp) -
     payload_info.header_len + item_len < rlp.as_raw().len()
 }
 
-fn _decode_raw_preserving<'a>(
+fn _wrap_as_list_if_some(val: Option<&PyList>) -> Option<ListOrBytes> {
+    match val {
+        Some(val) => Some(ListOrBytes::List(val)),
+        None => None,
+    }
+}
+
+fn _decode_raw<'a>(
     strict: bool,
+    preserve_cache_info: bool,
     rlp_val: rlp::Rlp,
     py: pyo3::Python<'a>,
-) -> Result<(ListOrBytes<'a>, ListOrBytes<'a>), PyErr> {
+) -> Result<(ListOrBytes<'a>, Option<ListOrBytes<'a>>), PyErr> {
     match rlp_val.prototype() {
         Ok(Prototype::Null) => errors::construct_invariant_error(),
         Ok(Prototype::Data(len)) => {
@@ -54,8 +62,14 @@ fn _decode_raw_preserving<'a>(
             let decoded_val =
                 ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_err(_DecoderError)?));
 
-            let rlp_val =
-                ListOrBytes::List(PyList::new(py, vec![PyBytes::new(py, rlp_val.as_raw())]));
+            let rlp_val = if preserve_cache_info {
+                Some(ListOrBytes::List(PyList::new(
+                    py,
+                    vec![PyBytes::new(py, rlp_val.as_raw())],
+                )))
+            } else {
+                None
+            };
 
             Ok((decoded_val, rlp_val))
         }
@@ -65,7 +79,13 @@ fn _decode_raw_preserving<'a>(
                 return errors::construct_trailing_bytes_error(&payload_info);
             }
             let current = PyList::empty(py);
-            let rlp_info = PyList::new(py, vec![PyBytes::new(py, rlp_val.as_raw())]);
+
+            let rlp_info = if preserve_cache_info {
+                Some(PyList::new(py, vec![PyBytes::new(py, rlp_val.as_raw())]))
+            } else {
+                None
+            };
+
             for i in 0..len {
                 let item = rlp_val.at(i).map_err(_DecoderError)?;
                 if strict
@@ -74,10 +94,10 @@ fn _decode_raw_preserving<'a>(
                     return errors::construct_trailing_bytes_error(&payload_info);
                 // TODO: Investigate if that is the correct way to decide about termination of non-strict decoding
                 } else if !strict && item.as_raw() == [0] {
-                    return Ok((ListOrBytes::List(current), ListOrBytes::List(rlp_info)));
+                    return Ok((ListOrBytes::List(current), _wrap_as_list_if_some(rlp_info)));
                 }
 
-                match _decode_raw_preserving(strict, item, py) {
+                match _decode_raw(strict, preserve_cache_info, item, py) {
                     Ok(decoded_and_info) => {
                         // Handle the decoded item itself
                         if let (ListOrBytes::List(thing), _) = decoded_and_info {
@@ -85,65 +105,19 @@ fn _decode_raw_preserving<'a>(
                         } else if let (ListOrBytes::Bytes(thing), _) = decoded_and_info {
                             current.append(thing)?
                         }
-                        // Handle the preserved info
-                        if let (_, ListOrBytes::List(info)) = decoded_and_info {
-                            rlp_info.append(info)?
-                        } else if let (_, ListOrBytes::Bytes(info)) = decoded_and_info {
-                            rlp_info.append(info)?
+                        // Handle the preserved info if we need to
+                        if let Some(_rlp_info) = rlp_info {
+                            if let (_, Some(ListOrBytes::List(info))) = decoded_and_info {
+                                _rlp_info.append(info)?
+                            } else if let (_, Some(ListOrBytes::Bytes(info))) = decoded_and_info {
+                                _rlp_info.append(info)?
+                            }
                         }
                     }
                     _ => return errors::construct_invariant_error(),
                 }
             }
-            Ok((ListOrBytes::List(current), ListOrBytes::List(rlp_info)))
-        }
-        Err(e) => Err(DecodingError::py_err(format!("{:?}", e))),
-    }
-}
-
-fn _decode_raw<'a>(
-    strict: bool,
-    rlp_val: rlp::Rlp,
-    py: pyo3::Python<'a>,
-) -> Result<ListOrBytes<'a>, PyErr> {
-    match rlp_val.prototype() {
-        Ok(Prototype::Null) => errors::construct_invariant_error(),
-        Ok(Prototype::Data(len)) => {
-            if strict {
-                let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
-                if _has_trailing_bytes(&payload_info, len, &rlp_val) {
-                    return errors::construct_trailing_bytes_error(&payload_info);
-                }
-            }
-            Ok(ListOrBytes::Bytes(PyBytes::new(
-                py,
-                rlp_val.data().map_err(_DecoderError)?,
-            )))
-        }
-        Ok(Prototype::List(len)) => {
-            let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
-            if strict && len == 0 && _has_trailing_bytes(&payload_info, len, &rlp_val) {
-                return errors::construct_trailing_bytes_error(&payload_info);
-            }
-            let current = PyList::empty(py);
-            for i in 0..len {
-                let item = rlp_val.at(i).map_err(_DecoderError)?;
-                if strict
-                    && rlp_val.as_raw().len() > (payload_info.header_len + payload_info.value_len)
-                {
-                    return errors::construct_trailing_bytes_error(&payload_info);
-                // TODO: Investigate if that is the correct way to decide about termination of non-strict decoding
-                } else if !strict && item.as_raw() == [0] {
-                    return Ok(ListOrBytes::List(current));
-                }
-
-                match _decode_raw(strict, item, py) {
-                    Ok(ListOrBytes::List(val)) => current.append(val)?,
-                    Ok(ListOrBytes::Bytes(val)) => current.append(val)?,
-                    _ => return errors::construct_invariant_error(),
-                }
-            }
-            Ok(ListOrBytes::List(current))
+            Ok((ListOrBytes::List(current), _wrap_as_list_if_some(rlp_info)))
         }
         Err(e) => Err(DecodingError::py_err(format!("{:?}", e))),
     }
@@ -195,12 +169,13 @@ fn decode_raw(
     preserve_cache_info: bool,
     py: pyo3::Python,
 ) -> PyResult<PyObject> {
-    if preserve_cache_info {
-        _decode_raw_preserving(strict, rlp::Rlp::new(&rlp_val), py).map(|val| val.to_object(py))
-    } else {
-        _decode_raw(strict, rlp::Rlp::new(&rlp_val), py)
-            .map(|val| (val, PyList::empty(py)).to_object(py))
-    }
+    _decode_raw(strict, preserve_cache_info, rlp::Rlp::new(&rlp_val), py).map(|result| {
+        match result {
+            (decoded, None) => (decoded, PyList::empty(py).to_object(py)),
+            (decoded, Some(val)) => (decoded, val.to_object(py)),
+        }
+        .to_object(py)
+    })
 }
 
 /// A Python module implemented in Rust.
