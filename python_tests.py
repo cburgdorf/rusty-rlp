@@ -27,7 +27,7 @@ def test_decode_raw(input):
     assert pyrlp_encoded == rustyrlp_encoded
 
     pyrlp_decoded = decode(pyrlp_encoded)
-    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded, True)
+    rustyrlp_decoded, _ = rusty_rlp.decode_raw(rustyrlp_encoded, True, False)
 
     assert pyrlp_decoded == rustyrlp_decoded == input
 
@@ -44,7 +44,7 @@ def test_decode_tuple_as_list(input, expected):
     assert pyrlp_encoded == rustyrlp_encoded
 
     pyrlp_decoded = decode(pyrlp_encoded)
-    rustyrlp_decoded = rusty_rlp.decode_raw(rustyrlp_encoded, True)
+    rustyrlp_decoded, _ = rusty_rlp.decode_raw(rustyrlp_encoded, True, False)
 
     assert pyrlp_decoded == rustyrlp_decoded == expected
 
@@ -85,7 +85,7 @@ def test_invalid_serializations(rlp_data):
 )
 def test_invalid_deserializations(rlp_data, expected_error):
     with pytest.raises(expected_error):
-        rusty_rlp.decode_raw(rlp_data, True)
+        rusty_rlp.decode_raw(rlp_data, True, False)
 
 
 @pytest.mark.parametrize(
@@ -100,7 +100,8 @@ def test_invalid_deserializations(rlp_data, expected_error):
     ),
 )
 def test_decode_special_cases(rlp_data, expected):
-    assert rusty_rlp.decode_raw(rlp_data, True) == expected
+    decoded, _ = rusty_rlp.decode_raw(rlp_data, True, False)
+    assert decoded == expected
 
 
 @pytest.mark.parametrize(
@@ -130,7 +131,8 @@ def test_decode_special_cases(rlp_data, expected):
     ),
 )
 def test_nonstrict_deserializations(rlp_data, expected):
-    assert rusty_rlp.decode_raw(rlp_data, False) == expected
+    decoded, _ = rusty_rlp.decode_raw(rlp_data, False, False)
+    assert decoded == expected
 
 
 @pytest.mark.parametrize(
@@ -144,7 +146,10 @@ def test_nonstrict_deserializations(rlp_data, expected):
     ),
 )
 def test_preserving_api(rlp_data, expected, expected_per_item_rlp):
-    decoded, per_item_rlp = rusty_rlp.decode_raw_preserving(rlp_data, True)
+    decoded, per_item_rlp = rusty_rlp.decode_raw(rlp_data, strict=True, preserve_cache_info=True)
     assert decoded == expected
     assert per_item_rlp == expected_per_item_rlp
 
+    decoded, per_item_rlp = rusty_rlp.decode_raw(rlp_data, strict=True, preserve_cache_info=False)
+    assert decoded == expected
+    assert per_item_rlp == []

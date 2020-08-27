@@ -189,20 +189,24 @@ fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
 }
 
 #[pyfunction]
-fn decode_raw(rlp_val: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
-    _decode_raw(strict, rlp::Rlp::new(&rlp_val), py).map(|val| val.to_object(py))
-}
-
-#[pyfunction]
-fn decode_raw_preserving(rlp_val: Vec<u8>, strict: bool, py: pyo3::Python) -> PyResult<PyObject> {
-    _decode_raw_preserving(strict, rlp::Rlp::new(&rlp_val), py).map(|val| val.to_object(py))
+fn decode_raw(
+    rlp_val: Vec<u8>,
+    strict: bool,
+    preserve_cache_info: bool,
+    py: pyo3::Python,
+) -> PyResult<PyObject> {
+    if preserve_cache_info {
+        _decode_raw_preserving(strict, rlp::Rlp::new(&rlp_val), py).map(|val| val.to_object(py))
+    } else {
+        _decode_raw(strict, rlp::Rlp::new(&rlp_val), py)
+            .map(|val| (val, PyList::empty(py)).to_object(py))
+    }
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rusty_rlp(_py: Python, module: &PyModule) -> PyResult<()> {
     module.add_wrapped(wrap_pyfunction!(decode_raw))?;
-    module.add_wrapped(wrap_pyfunction!(decode_raw_preserving))?;
     module.add_wrapped(wrap_pyfunction!(encode_raw))?;
     module.add("DecodingError", _py.get_type::<DecodingError>())?;
     module.add("EncodingError", _py.get_type::<EncodingError>())?;
