@@ -75,6 +75,7 @@ fn _decode_raw<'a>(
                     vec![PyBytes::new(py, rlp_val.as_raw())],
                 )))
             } else {
+                // We don't want to allocate any unnecessary Python values if we don't have to preserve cache info
                 None
             };
 
@@ -85,6 +86,9 @@ fn _decode_raw<'a>(
             if strict && len == 0 && _has_trailing_bytes(&payload_info, len, &rlp_val) {
                 return errors::construct_trailing_bytes_error(&payload_info);
             }
+            // TODO: Instead of creating an empty list early and then appending each item, we could instead
+            // use an iterator and build up lists lazily, leveraging PyList::new(py, iterator) which would
+            // be slightly more performant on the Python side.
             let current = PyList::empty(py);
 
             let rlp_info = if preserve_cache_info {
