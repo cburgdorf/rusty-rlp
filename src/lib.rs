@@ -8,6 +8,7 @@ mod errors;
 
 use crate::errors::{DecodingError, EncodingError, RlpDecoderError};
 
+// We use this to abstract between both types to not have to rely on calling to_object(py) to achieve that.
 enum ListOrBytes<'a> {
     List(&'a PyList),
     Bytes(&'a PyBytes),
