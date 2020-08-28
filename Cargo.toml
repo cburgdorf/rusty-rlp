@@ -1,7 +1,7 @@
 
 [package]
 name = "rusty-rlp"
-version = "0.1.14"
+version = "0.1.15"
 authors = ["Christoph Burgdorf <christoph.burgdorf@gmail.com>"]
 edition = "2018"
 description = "Python RLP serialization/deserialization based on a rapid fast Rust implementation."
