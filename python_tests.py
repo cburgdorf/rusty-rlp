@@ -81,6 +81,7 @@ def test_invalid_serializations(rlp_data):
         (b'\xb8\x00', rusty_rlp.DecodingError),
         (b'\xb9\x00\x00', rusty_rlp.DecodingError),
         (b'\xba\x00\x02\xff\xff', rusty_rlp.DecodingError),
+        (b'\x81\x54', rusty_rlp.DecodingError),
     ),
 )
 def test_invalid_deserializations(rlp_data, expected_error):

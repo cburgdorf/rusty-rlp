@@ -58,7 +58,14 @@ fn _decode_raw<'a>(
                 if _has_trailing_bytes(&payload_info, len, &rlp_val) {
                     return errors::construct_trailing_bytes_error(&payload_info);
                 }
+
+                if let [prefix, val] = rlp_val.as_raw() {
+                    if prefix == &129 && (val >= &0 && val <= &127) {
+                        return errors::construct_short_string_error(val);
+                    }
+                }
             }
+
             let decoded_val =
                 ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_err(_DecoderError)?));
 

@@ -2,6 +2,13 @@ use crate::DecodingError;
 use pyo3::prelude::*;
 use rlp::PayloadInfo;
 
+pub fn construct_short_string_error<T>(val: &u8) -> Result<T, PyErr> {
+    Err(DecodingError::py_err(format!(
+        "Encoded {} as short string although single byte was possible",
+        val
+    )))
+}
+
 pub fn construct_invariant_error<T>() -> Result<T, PyErr> {
     Err(DecodingError::py_err("Invariant"))
 }
