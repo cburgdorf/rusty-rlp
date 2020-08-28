@@ -6,13 +6,15 @@ use rlp::PayloadInfo;
 create_exception!(rusty_rlp, EncodingError, Exception);
 create_exception!(rusty_rlp, DecodingError, Exception);
 
-// We can not implement From for rlp::DecoderError as it is in a foreign crate. Hence, we use
-// map_err and implement From on RlpDecoderError instead.
-pub struct RlpDecoderError(pub rlp::DecoderError);
-impl std::convert::From<RlpDecoderError> for PyErr {
-    fn from(err: RlpDecoderError) -> PyErr {
-        DecodingError::py_err(err.0.to_string())
-    }
+
+pub trait ToDecodingError<T> {
+  fn map_decoder_error(self) -> Result<T, PyErr>;
+}
+
+impl<T> ToDecodingError<T> for Result<T, rlp::DecoderError> {
+  fn map_decoder_error(self) -> Result<T, PyErr> {
+      self.map_err(|val | DecodingError::py_err(val.to_string()))
+  }
 }
 
 pub fn construct_short_string_error<T>(val: &u8) -> Result<T, PyErr> {
