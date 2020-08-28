@@ -1,23 +1,12 @@
-use pyo3::exceptions::Exception;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyList, PyTuple};
-use pyo3::{create_exception, wrap_pyfunction};
+use pyo3::wrap_pyfunction;
 
 use rlp::{PayloadInfo, Prototype, Rlp};
 
 mod errors;
 
-create_exception!(rusty_rlp, EncodingError, Exception);
-create_exception!(rusty_rlp, DecodingError, Exception);
-
-// We can not implement From for rlp::DecoderError as it is in a foreign crate. Hence, we use
-// map_err and implement From on _DecoderError instead.
-struct _DecoderError(rlp::DecoderError);
-impl std::convert::From<_DecoderError> for PyErr {
-    fn from(err: _DecoderError) -> PyErr {
-        DecodingError::py_err(err.0.to_string())
-    }
-}
+use crate::errors::{DecodingError, EncodingError, RlpDecoderError};
 
 enum ListOrBytes<'a> {
     List(&'a PyList),
@@ -54,7 +43,7 @@ fn _decode_raw<'a>(
         Ok(Prototype::Null) => errors::construct_invariant_error(),
         Ok(Prototype::Data(len)) => {
             if strict {
-                let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
+                let payload_info = rlp_val.payload_info().map_err(RlpDecoderError)?;
                 if _has_trailing_bytes(&payload_info, len, &rlp_val) {
                     return errors::construct_trailing_bytes_error(&payload_info);
                 }
@@ -67,7 +56,7 @@ fn _decode_raw<'a>(
             }
 
             let decoded_val =
-                ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_err(_DecoderError)?));
+                ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_err(RlpDecoderError)?));
 
             let rlp_val = if preserve_cache_info {
                 Some(ListOrBytes::List(PyList::new(
@@ -82,7 +71,7 @@ fn _decode_raw<'a>(
             Ok((decoded_val, rlp_val))
         }
         Ok(Prototype::List(len)) => {
-            let payload_info = rlp_val.payload_info().map_err(_DecoderError)?;
+            let payload_info = rlp_val.payload_info().map_err(RlpDecoderError)?;
             if strict && len == 0 && _has_trailing_bytes(&payload_info, len, &rlp_val) {
                 return errors::construct_trailing_bytes_error(&payload_info);
             }
@@ -98,7 +87,7 @@ fn _decode_raw<'a>(
             };
 
             for i in 0..len {
-                let item = rlp_val.at(i).map_err(_DecoderError)?;
+                let item = rlp_val.at(i).map_err(RlpDecoderError)?;
                 if strict
                     && rlp_val.as_raw().len() > (payload_info.header_len + payload_info.value_len)
                 {
