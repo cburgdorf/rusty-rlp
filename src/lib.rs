@@ -39,7 +39,7 @@ fn _decode_raw<'a>(
     preserve_cache_info: bool,
     rlp_val: rlp::Rlp,
     py: pyo3::Python<'a>,
-) -> Result<(ListOrBytes<'a>, Option<ListOrBytes<'a>>), PyErr> {
+) -> PyResult<(ListOrBytes<'a>, Option<ListOrBytes<'a>>)> {
     match rlp_val.prototype() {
         Ok(Prototype::Null) => errors::construct_invariant_error(),
         Ok(Prototype::Data(len)) => {
@@ -128,39 +128,39 @@ fn _encode_raw<'a>(
     stream: &'a mut rlp::RlpStream,
     val: &PyAny,
     py: pyo3::Python,
-) -> Result<&'a mut rlp::RlpStream, pyo3::PyErr> {
+) -> PyResult<()> { // Ok type could probably be () since we're returning the same mutable reference that we pass in
+    // Im wondering if we could get the type that it downcasts to and then match it..
     if let Ok(list_item) = val.downcast::<PyList>() {
+        // maybe we could copy this block into its own method?
+        // def _encode_list(...) -> PyResult<()>
         stream.begin_unbounded_list();
         for item in list_item {
             _encode_raw(stream, item, py)?;
         }
         stream.finalize_unbounded_list();
-        Ok(stream)
     } else if let Ok(list_item) = val.downcast::<PyTuple>() {
         stream.begin_unbounded_list();
         for item in list_item {
             _encode_raw(stream, item, py)?;
         }
         stream.finalize_unbounded_list();
-        Ok(stream)
     } else if let Ok(bytes_item) = val.downcast::<PyBytes>() {
         stream.append(&bytes_item.as_bytes());
-        Ok(stream)
     } else {
-        Err(EncodingError::py_err(format!(
+        return Err(EncodingError::py_err(format!(
             "Can not encode value {:?}",
             val
         )))
     }
+
+    Ok(())
 }
 
 #[pyfunction]
 fn encode_raw(val: PyObject, py: pyo3::Python) -> PyResult<PyObject> {
     let mut rlp_stream = rlp::RlpStream::new();
-    match _encode_raw(&mut rlp_stream, &val.cast_as(py).unwrap(), py) {
-        Ok(_) => Ok(PyBytes::new(py, &rlp_stream.out()).to_object(py)),
-        Err(e) => Err(e),
-    }
+    _encode_raw(&mut rlp_stream, &val.cast_as(py).unwrap(), py)?;
+    Ok(PyBytes::new(py, &rlp_stream.out()).to_object(py))
 }
 
 #[pyfunction]
