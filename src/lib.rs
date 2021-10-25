@@ -120,7 +120,7 @@ fn _decode_raw<'a>(
             }
             Ok((ListOrBytes::List(current), _wrap_as_list_if_some(rlp_info)))
         }
-        Err(e) => Err(DecodingError::py_err(format!("{:?}", e))),
+        Err(e) => Err(DecodingError::new_err(format!("{:?}", e))),
     }
 }
 
@@ -147,7 +147,7 @@ fn _encode_raw<'a>(
         stream.append(&bytes_item.as_bytes());
         Ok(stream)
     } else {
-        Err(EncodingError::py_err(format!(
+        Err(EncodingError::new_err(format!(
             "Can not encode value {:?}",
             val
         )))
