@@ -6,7 +6,7 @@ use rlp::{PayloadInfo, Prototype, Rlp};
 
 mod errors;
 
-use crate::errors::{DecodingError, EncodingError, RlpDecoderError};
+use crate::errors::{DecodingError, EncodingError, ToDecodingError};
 
 // We use this to abstract between both types to not have to rely on calling to_object(py) to achieve that.
 enum ListOrBytes<'a> {
@@ -44,7 +44,7 @@ fn _decode_raw<'a>(
         Ok(Prototype::Null) => errors::construct_invariant_error(),
         Ok(Prototype::Data(len)) => {
             if strict {
-                let payload_info = rlp_val.payload_info().map_err(RlpDecoderError)?;
+                let payload_info = rlp_val.payload_info().map_decoder_error()?;
                 if _has_trailing_bytes(&payload_info, len, &rlp_val) {
                     return errors::construct_trailing_bytes_error(&payload_info);
                 }
@@ -57,7 +57,7 @@ fn _decode_raw<'a>(
             }
 
             let decoded_val =
-                ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_err(RlpDecoderError)?));
+                ListOrBytes::Bytes(PyBytes::new(py, rlp_val.data().map_decoder_error()?));
 
             let rlp_val = if preserve_cache_info {
                 Some(ListOrBytes::List(PyList::new(
@@ -72,7 +72,7 @@ fn _decode_raw<'a>(
             Ok((decoded_val, rlp_val))
         }
         Ok(Prototype::List(len)) => {
-            let payload_info = rlp_val.payload_info().map_err(RlpDecoderError)?;
+            let payload_info = rlp_val.payload_info().map_decoder_error()?;
             if strict && len == 0 && _has_trailing_bytes(&payload_info, len, &rlp_val) {
                 return errors::construct_trailing_bytes_error(&payload_info);
             }
@@ -88,7 +88,7 @@ fn _decode_raw<'a>(
             };
 
             for i in 0..len {
-                let item = rlp_val.at(i).map_err(RlpDecoderError)?;
+                let item = rlp_val.at(i).map_decoder_error()?;
                 if strict
                     && rlp_val.as_raw().len() > (payload_info.header_len + payload_info.value_len)
                 {
