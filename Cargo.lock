@@ -482,7 +482,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-rlp"
-version = "0.1.15"
+version = "0.3.0"
 dependencies = [
  "bytes",
  "ethereum-types",
