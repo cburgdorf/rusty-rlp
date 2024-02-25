@@ -121,3 +121,39 @@ jobs:
           env:
             MATURIN_PASSWORD: ${{ secrets.PYPI }}
           run: maturin publish --no-sdist --username __token__ --interpreter python
+
+  release_aarch64:
+      runs-on: ${{ matrix.os }}
+      needs: release
+      strategy:
+        fail-fast: false
+        matrix:
+          python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39']
+          os: [ubuntu-latest]
+      env:
+        py: /opt/python/${{ matrix.python-version }}/bin/python
+        img: quay.io/pypa/manylinux2014_aarch64
+
+      steps:
+        - uses: actions/checkout@v2
+        - name: Set up QEMU
+          id: qemu
+          uses: docker/setup-qemu-action@v1 
+        - name: Install tools
+          run: |
+            docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+            ${{ env.img }} ${{ env.py }} -m pip install -U  pip build
+        - name: Installing dependencies and Building
+          run: |
+            docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+            ${{ env.img }} \
+            bash -exc '${{ env.py }} -m venv .env && \
+            source .env/bin/activate && \
+            curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+            source $HOME/.cargo/env && \
+            python -m pip install --upgrade pip && \
+            pip install -e . && \
+            pip install maturin && \
+            maturin build --release --no-sdist --strip --interpreter python && \
+            maturin publish --no-sdist --username __token__ --interpreter python && \
+            deactivate'
