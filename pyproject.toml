@@ -4,6 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "rusty-rlp"
+version = "0.3.0"
 classifiers = [
   "Intended Audience :: Developers",
   "Programming Language :: Rust",
