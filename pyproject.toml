@@ -1,10 +1,9 @@
 [build-system]
-requires = ["maturin"]
+requires = ["maturin>=1.0,<2"]
 build-backend = "maturin"
 
 [project]
 name = "rusty-rlp"
-version = "0.4.0"
 classifiers = [
   "Intended Audience :: Developers",
   "Programming Language :: Rust",
